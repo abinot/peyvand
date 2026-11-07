@@ -1,9 +1,0 @@
-فایل cleanup-obsolete-campaign-files.sh همین پنج فایل قدیمی را حذف می‌کند:
-
-app/Models/LinkCampaign.php
-app/Models/LinkCampaignRecipient.php
-database/factories/LinkCampaignFactory.php
-database/factories/LinkCampaignRecipientFactory.php
-resources/views/components/⚡campaign-manager.blade.php
-
-مهاجرت جدید، جدول‌های link_campaigns و link_campaign_recipients و ستون links.campaign_id را حذف می‌کند؛ نام کارزارهای قدیمی را به پوشه تبدیل می‌کند و داده‌های هر مخاطب را به فرادادهٔ پیوند عادی منتقل می‌کند. اگر رکورد مخاطب دیگر پیوند نداشته باشد، در صورت معتبر بودن نشانی مقصد کارزار، یک پیوند عادی تازه برایش می‌سازد.
