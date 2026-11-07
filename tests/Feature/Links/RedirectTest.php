@@ -79,3 +79,37 @@ it('still works for a link that expires in the future', function () {
 it('does not hijack the real app routes', function () {
     $this->get('/login')->assertOk();
 });
+
+
+it('records incoming UTM parameters and forwards them to the destination', function () {
+    $link = Link::factory()->create([
+        'code' => 'utm123',
+        'original_url' => 'https://example.org/page?ref=existing&utm_source=old#section',
+    ]);
+
+    $this->get('/utm123?utm_source=sms&utm_campaign=campaign_3&not_forwarded=secret')
+        ->assertRedirect('https://example.org/page?ref=existing&utm_source=sms&utm_campaign=campaign_3#section');
+
+    $utm = $link->clickLogs()->first()->utm_parameters;
+
+    expect($utm)->toMatchArray(['utm_source' => 'sms', 'utm_campaign' => 'campaign_3']);
+    expect($utm)->not->toHaveKey('not_forwarded');
+});
+
+it('forwards metadata fields as GET and UTM parameters', function () {
+    $link = Link::factory()->create([
+        'code' => 'map123',
+        'original_url' => 'https://example.org/offer',
+        'metadata' => [
+            'phone' => '09120000000',
+            'gender' => 'female',
+            'utm_defaults' => ['utm_source' => 'sms'],
+        ],
+        'tracking_rules' => [
+            'query' => ['phone' => '{{phone}}', 'gender' => '{{gender}}'],
+            'utm' => ['utm_content' => '{{phone}}'],
+        ],
+    ]);
+
+    $this->get('/map123')->assertRedirect('https://example.org/offer?phone=09120000000&gender=female&utm_source=sms&utm_content=09120000000');
+});

@@ -80,8 +80,11 @@ new class extends Component {
     {
         $invitation = TeamInvitation::query()
             ->where('code', $code)
-            ->whereNull('accepted_at')
             ->firstOrFail();
+
+        if ($invitation->accepted_at !== null) {
+            throw (new ModelNotFoundException)->setModel(TeamInvitation::class, [$invitation->getKey()]);
+        }
 
         if ($invitation->isExpired()) {
             throw ValidationException::withMessages([

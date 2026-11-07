@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedMetadata;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -12,16 +15,17 @@ class Link extends Model
 {
     use HasFactory;
 
-    /** کدهایی که با مسیرهای خود برنامه تداخل دارند */
+    /** کدهایی که با مسیرهای خود برنامه تداخل دارند. */
     public const RESERVED = [
         'login', 'logout', 'register', 'dashboard', 'settings', 'teams', 'team',
-        'links', 'api', 'admin', 'forgot-password', 'reset-password',
-        'two-factor-challenge', 'email', 'up', 'livewire', 'build', 'storage',
+        'links', 'analytics', 'api', 'admin', 'forgot-password',
+        'reset-password', 'two-factor-challenge', 'email', 'up', 'livewire',
+        'build', 'storage',
     ];
 
     protected $fillable = [
-        'user_id', 'team_id', 'code', 'original_url', 'title',
-        'clicks', 'is_active', 'expires_at',
+        'team_id', 'created_by', 'folder_id', 'category_id',
+        'code', 'original_url', 'title', 'clicks', 'is_active', 'expires_at', 'metadata', 'tracking_rules',
     ];
 
     protected function casts(): array
@@ -29,17 +33,39 @@ class Link extends Model
         return [
             'is_active' => 'boolean',
             'expires_at' => 'datetime',
+            'metadata' => EncryptedMetadata::class,
+            'tracking_rules' => 'array',
         ];
     }
 
-    public function user(): BelongsTo
+    public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(LinkFolder::class, 'folder_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(LinkCategory::class, 'category_id');
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(LinkTag::class, 'link_tag_link')->withTimestamps();
+    }
+
+    public function scopeForTeam(Builder $query, int $teamId): Builder
+    {
+        return $query->where('team_id', $teamId);
     }
 
     public function clickLogs(): HasMany

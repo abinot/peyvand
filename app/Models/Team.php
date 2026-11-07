@@ -76,6 +76,34 @@ class Team extends Model
     }
 
     /**
+     * Get links owned by this team.
+     *
+     * @return HasMany<Link, $this>
+     */
+    public function links(): HasMany
+    {
+        return $this->hasMany(Link::class);
+    }
+
+    /**
+     * Get the folders, categories and tags shared by this team.
+     */
+    public function folders(): HasMany
+    {
+        return $this->hasMany(LinkFolder::class);
+    }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(LinkCategory::class);
+    }
+
+    public function tags(): HasMany
+    {
+        return $this->hasMany(LinkTag::class);
+    }
+
+    /**
      * Get all memberships for this team.
      *
      * @return HasMany<Membership, $this>

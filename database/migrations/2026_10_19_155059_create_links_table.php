@@ -13,14 +13,16 @@ return new class extends Migration
     {
         Schema::create('links', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('team_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('code', 32)->unique();
             $table->text('original_url');
             $table->string('title')->nullable();
             $table->unsignedBigInteger('clicks')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamp('expires_at')->nullable();
+            $table->json('metadata')->nullable();
+            $table->index(['team_id', 'created_at']);
             $table->timestamps();
         });
     }

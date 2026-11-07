@@ -10,9 +10,6 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
-            <flux:sidebar.item icon="link" :href="route('links.index')" :current="request()->routeIs('links.index')" wire:navigate>
-            کوتاه‌کننده لینک
-        </flux:sidebar.item>
 
             <livewire:team-switcher />
 

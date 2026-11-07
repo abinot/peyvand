@@ -18,7 +18,7 @@ it('redirects guests to login', function () {
 it('renders the page for authenticated users', function () {
     $this->get(route('links.index'))
         ->assertOk()
-        ->assertSee('کوتاه‌کننده لینک');
+        ->assertSee('مدیریت پیوندها');
 });
 
 it('creates a link with a random 6 character code', function () {
@@ -31,7 +31,7 @@ it('creates a link with a random 6 character code', function () {
 
     $link = Link::first();
 
-    expect($link->user_id)->toBe($this->user->id)
+    expect($link->created_by)->toBe($this->user->id)
         ->and($link->team_id)->toBe($this->user->current_team_id)
         ->and($link->original_url)->toBe('https://example.org/long/path')
         ->and($link->title)->toBe('نمونه')
@@ -102,8 +102,8 @@ it('rejects an expiry date in the past', function () {
         ->assertHasErrors(['expiresAt']);
 });
 
-it('lists only the current user links', function () {
-    Link::factory()->for($this->user)->create(['code' => 'mine001']);
+it('lists only links belonging to the current team', function () {
+    Link::factory()->create(['team_id' => $this->user->current_team_id, 'created_by' => $this->user->id, 'code' => 'mine001']);
     Link::factory()->create(['code' => 'other01']);
 
     Livewire::test('link-manager')
@@ -112,7 +112,7 @@ it('lists only the current user links', function () {
 });
 
 it('toggles the status of an own link', function () {
-    $link = Link::factory()->for($this->user)->create();
+    $link = Link::factory()->create(['team_id' => $this->user->current_team_id, 'created_by' => $this->user->id]);
 
     $component = Livewire::test('link-manager');
 
@@ -124,14 +124,14 @@ it('toggles the status of an own link', function () {
 });
 
 it('deletes an own link', function () {
-    $link = Link::factory()->for($this->user)->create();
+    $link = Link::factory()->create(['team_id' => $this->user->current_team_id, 'created_by' => $this->user->id]);
 
     Livewire::test('link-manager')->call('delete', $link->id);
 
     $this->assertModelMissing($link);
 });
 
-it('cannot toggle or delete links of other users', function () {
+it('cannot toggle or delete links belonging to another team', function () {
     $foreign = Link::factory()->create(['is_active' => true]);
 
     rescue(fn () => Livewire::test('link-manager')->call('toggle', $foreign->id), report: false);
@@ -139,4 +139,24 @@ it('cannot toggle or delete links of other users', function () {
 
     expect($foreign->fresh())->not->toBeNull()
         ->and($foreign->fresh()->is_active)->toBeTrue();
+});
+
+it('allows team members to edit the destination without changing the short code', function () {
+    $link = Link::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'created_by' => $this->user->id,
+        'code' => 'edit123',
+        'original_url' => 'https://example.org/old',
+    ]);
+
+    Livewire::test('link-manager')
+        ->call('edit', $link->id)
+        ->set('editUrl', 'https://example.org/new')
+        ->set('editTitle', 'مقصد تازه')
+        ->call('saveEdit')
+        ->assertHasNoErrors();
+
+    expect($link->fresh()->code)->toBe('edit123')
+        ->and($link->fresh()->original_url)->toBe('https://example.org/new')
+        ->and($link->fresh()->title)->toBe('مقصد تازه');
 });
